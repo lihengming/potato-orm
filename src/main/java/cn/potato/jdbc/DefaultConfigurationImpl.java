@@ -58,6 +58,7 @@ public class DefaultConfigurationImpl implements Configuration {
 		return value != null?value:DEFALT_MAX_POOL_SIZE;
 	}
 	
+	@SuppressWarnings("unchecked")
 	private <T> T getProperty(String key){
 		if(properties!=null)
 			return (T)properties.getProperty(key);
