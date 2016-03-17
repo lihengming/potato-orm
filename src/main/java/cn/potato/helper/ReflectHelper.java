@@ -45,4 +45,11 @@ public class ReflectHelper {
 		return object;
 	}
 
+	public static Object changeType(Object src,Class<?> target){
+		if(target == Integer.class||target == Integer.TYPE){
+			src = ((Number)src).intValue();
+		}
+		return src;
+		
+	}
 }

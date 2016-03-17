@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +37,16 @@ public class DB {
 
 	public void save(Object entity) {
 		String sql = buildSQL(entity, SQLType.Insert);
-		execute(sql);
+		Number id = execute(sql);
+			try {
+				//通过反射将生成的主键注入回实体对象
+				PropertyDescriptor propertyDescriptor = new PropertyDescriptor(
+						"id", entity.getClass());
+				Object arg = ReflectHelper.changeType(id, propertyDescriptor.getPropertyType());
+				propertyDescriptor.getWriteMethod().invoke(entity, arg);
+			} catch (Exception e) {
+				throw new RuntimeException("主键注入失败："+e.getMessage());
+			}
 	}
 
 	public void delete(Object entity) {
@@ -83,7 +93,7 @@ public class DB {
 		return null;
 	}
 
-	private int execute(String sql) {
+	private Number execute(String sql) {
 		return execute(sql, new Object[] {});
 	}
 	
@@ -93,20 +103,23 @@ public class DB {
 	 * @since 2016年3月16日
 	 * @param sql
 	 * @param args
-	 * @return
+	 * @return 主键
 	 */
-	private int execute(String sql, Object... args) {
+	private Number execute(String sql, Object... args) {
 		Connection conn = null;
-		int count = -1;
+		Number primaryKey = null;
 		try {
 			conn = dataSource.getConnection();
-			PreparedStatement statement = conn.prepareStatement(sql);
+			PreparedStatement statement = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
 			int i = 1;
 			for (Object object : args) {
 				statement.setObject(i, object);
 				++i;
 			}
-			count = statement.executeUpdate();
+			statement.executeUpdate();
+			ResultSet result = statement.getGeneratedKeys();
+			if(result.next())
+				primaryKey = result.getLong(1);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
@@ -117,7 +130,7 @@ public class DB {
 					e.printStackTrace();
 				}
 		}
-		return count;
+		return primaryKey;
 	}
 	
 	/**
@@ -138,8 +151,7 @@ public class DB {
 				Object value = propertyDescriptor.getReadMethod().invoke(
 						entity, new Object[] {});
 				rowMap.put(field.getName(), value);
-			} catch (IllegalAccessException | IllegalArgumentException
-					| InvocationTargetException | IntrospectionException e) {
+			} catch (IllegalAccessException | IllegalArgumentException| InvocationTargetException | IntrospectionException e) {
 				e.printStackTrace();
 			}
 		}
@@ -158,9 +170,9 @@ public class DB {
 		// 构造SQL
 		StringBuilder sb = new StringBuilder();
 		String tableName = entity.getClass().getSimpleName().toLowerCase();
-		// 表影射
+		// 表映射
 		Map<String, Object> rowMap = entityChangeToRowMap(entity);
-		// 数据库字段栏
+		// 表列名
 		Set<String> columns = rowMap.keySet();
 		switch (type) {
 		case Insert:
@@ -173,7 +185,7 @@ public class DB {
 			sb.append("values(");
 			for (String col : columns) {
 				Object value = rowMap.get(col);
-				if (value != null)
+				if (value instanceof String)
 					value = "'" + value + "'";
 				sb.append(value + ",");
 			}
@@ -183,14 +195,12 @@ public class DB {
 		case Update:
 			Object id = rowMap.remove("id");// 先把id提出取来作为一会的where条件
 			if (id == null)
-				throw new RuntimeException("更新操作时,实体的主键不能为空！");
+				throw new RuntimeException("更新操作时,实体的主键(Id)不能为空！");
 
 			sb.append("update " + tableName + " set ");
 			for (String column : columns) {
 				sb.append(column + " = ");
-			}
-			for (String col : columns) {
-				Object value = rowMap.get(col);
+				Object value = rowMap.get(column);
 				if (value instanceof String)
 					value = "'" + value + "'";
 				sb.append(value + ",");

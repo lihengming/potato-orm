@@ -8,13 +8,13 @@ import cn.potato.orm.Model;
  * @since 2016年3月16日
  */
 public class User  extends Model<User>{//继承Modle成为一个Modle
-	private int id;//主键名称约定为id,后期可以使用注解来标识
+	private Integer id;//主键名称约定为id,后期可以使用注解来标识
 	private String username;
 	private String password;
-	public int getId() {
+	public Integer getId() {
 		return id;
 	}
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 	public String getUsername() {
