@@ -1,7 +1,9 @@
-package cn.potato.jdbc;
+package cn.potato.config;
+
+import javax.sql.DataSource;
 
 /**
- * 数据源配置接口
+ * 框架配置接口
  * @author 李恒名
  * @since 2016年3月16日
  */
@@ -12,4 +14,5 @@ public interface Configuration {
 	public String getPassword();
 	public Integer getMinPoolSize();
 	public Integer getMaxPoolSize();
+	public DataSource getDataSource();
 }

@@ -1,7 +1,7 @@
-package cn.potato.jdbc;
+package cn.potato.data;
 
 /**
- * 类说明
+ * SQL语句类型
  * @author 李恒名
  * @since 2016年3月16日
  */

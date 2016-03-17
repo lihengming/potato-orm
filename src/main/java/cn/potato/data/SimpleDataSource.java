@@ -1,4 +1,4 @@
-package cn.potato.jdbc;
+package cn.potato.data;
 
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationHandler;
@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import javax.sql.DataSource;
+
+import cn.potato.config.Configuration;
+import cn.potato.config.DefaultConfigurationImpl;
 
 /**
  * 简单数据源实现
@@ -128,18 +131,17 @@ public class SimpleDataSource implements DataSource {
 				if("close".equals(method.getName())){//找到close()方法
 					if(pool.size() < config.getMaxPoolSize()){//如果连接池连接数未达到上限放回连接池，否则调用close()关闭。
 						pool.add(connection);
-						System.out.println(connection+"返回连接池!");
+						System.out.println("DataSource："+connection+"返回连接池!");
 					}else{
 						connection.close();
-						System.out.println(connection+"已被关闭!");
+						System.out.println("DataSource："+connection+"已被关闭!");
 					}
-					System.out.println("当前连接池连接数："+pool.size());
 					return null;
 				}
 				return method.invoke(connection, args);
 			}
 		});
-		
+		System.out.println("DataSource："+"获得Connection:"+proxy);
 		return proxy;
 	}
 

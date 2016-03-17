@@ -3,7 +3,7 @@ package test;
 import java.util.List;
 
 import test.entity.User;
-import cn.potato.orm.Query;
+import cn.potato.data.Query;
 
 /**
  * 类说明
@@ -18,7 +18,7 @@ public class Tester {
 		user.setPassword("123456");
 		user.save();//插入数据
 		
-		assert(user.getId()!=null);
+		assert(user.getId()!=null);//插入数据库后自己注入自增主键
 		
 		user.setUsername("你妹啊");
 		user.update();
@@ -30,12 +30,7 @@ public class Tester {
 		User PUser = query.findBy("username", "测试用户名");//通过Where条件获得用户
 		assert(PUser != null);
 		
-	/*	System.out.println(Integer.class ==Integer.class);
-		System.out.println(Integer.class.equals(Integer.TYPE));
-		System.out.println(Integer.class.equals(int.class));
-		System.out.println(int.class.equals(int.class));
-		System.out.println(int.class == int.class);
-		System.out.println(int.class == Integer.TYPE);*/
+		
 		
 	}
 }

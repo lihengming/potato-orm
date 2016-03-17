@@ -1,10 +1,14 @@
-package cn.potato.jdbc;
+package cn.potato.config;
 
 import java.io.IOException;
 import java.util.Properties;
 
+import javax.sql.DataSource;
+
+import cn.potato.data.SimpleDataSource;
+
 /**
- * 默认的基础properties文件的数据源配置实现
+ * 默认的基于properties文件的数据源配置实现
  * @author 李恒名
  * @since 2016年3月16日
  */
@@ -63,5 +67,23 @@ public class DefaultConfigurationImpl implements Configuration {
 		if(properties!=null)
 			return (T)properties.getProperty(key);
 		return null;
+	}
+
+	@Override
+	public DataSource getDataSource() {
+		DataSource dataSource = null;
+		String className = getProperty("dataSource");
+		if(className!=null){
+			try {
+				@SuppressWarnings("unchecked")
+				Class<DataSource> clazz = (Class<DataSource>) Class.forName(className);
+				dataSource = clazz.newInstance();
+			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+				dataSource = new SimpleDataSource();
+			}
+		}else{
+			dataSource = new SimpleDataSource();
+		}
+		return dataSource;
 	}
 }

@@ -1,4 +1,4 @@
-package cn.potato.orm;
+package cn.potato.data;
 
 import java.util.List;
 

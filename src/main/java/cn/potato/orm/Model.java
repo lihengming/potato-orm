@@ -1,55 +1,53 @@
 package cn.potato.orm;
 
-import java.lang.reflect.ParameterizedType;
 import java.util.List;
 
-import cn.potato.jdbc.DB;
+import cn.potato.data.ActiveRecord;
+import cn.potato.data.Dao;
+import cn.potato.data.Query;
 
 /**
- * 模型抽象类，POJO继承该类便成为一个Modle 拥有增删改查的能力
+ * 模型抽象类，POJO继承该类便成为一个Modle 拥有DAO的能力
  * @author 李恒名
  * @since 2016年3月16日
  */
-public abstract class Model<Entity> {
-	
-	private Class<?> entityClass;
-	private DB db = new DB();
-	
-	public Model(){
-		ParameterizedType type = (ParameterizedType)this.getClass().getGenericSuperclass();
-		entityClass= (Class<?>) type.getActualTypeArguments()[0];
-	}
-	
+public abstract class Model<T> extends Dao<T> implements ActiveRecord<T> {
+
+	@Override
 	public void save() {
-		db.save(this);
+		save(this);
 	}
+	@Override
 	public void update() {
-		db.update(this);
+		update(this);
 	}
+	@Override
 	public void delete() {
-		db.delete(this);
+		delete(this);
 	}
-	public  Query<Entity> createQuery(){
+	@Override
+	public  Query<T> createQuery(){
 		return new QueryImpl();
 	}
+	
+	
+	
+	private final String tableNmae = entityClass.getSimpleName().toLowerCase(); 
 	@SuppressWarnings("unchecked")
-	private  class QueryImpl implements Query<Entity>{
-
+	private  class QueryImpl implements Query<T>{
 		@Override
-		public List<Entity> page(int page, int size) {
+		public List<T> page(int page, int size) {
 			return null;
 		}
-
 		@Override
-		public Entity findBy(String column, Object value) {
-			String sql = "select * from user where "+column+" = "+"?";
-			return (Entity) db.query(entityClass, sql, value).get(0);
+		public T findBy(String column, Object value) {
+			String sql = "select * from "+ tableNmae +" where "+column+" = "+"?";
+			return (T) query(sql, value).get(0);
 		}
-	
 		@Override
-		public List<Entity> list() {
-			String sql = "select * from user";
-			return (List<Entity>) db.query(entityClass, sql, new Object[]{});
+		public List<T> list() {
+			String sql = "select * from "+tableNmae;
+			return (List<T>) query(sql, new Object[]{});
 		}
 	}
 	
