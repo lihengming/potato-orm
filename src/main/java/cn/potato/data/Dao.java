@@ -11,16 +11,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.sql.DataSource;
 
-import cn.potato.config.Configuration;
-import cn.potato.config.DefaultConfigurationImpl;
-import cn.potato.helper.Converter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import cn.potato.helper.BeanHelper;
 
 /**
  * 数据库访问对象，提供增删改查的操作。
@@ -28,42 +29,52 @@ import cn.potato.helper.Converter;
  * @since 2016年3月16日
  */
 public  abstract class Dao<T> {
+	private static DataSource dataSource  = new SimpleDataSource();
+	private static final Logger log =  LoggerFactory.getLogger(Dao.class);
 	protected Class<?> entityClass;
-	private DataSource dataSource;
-	private Configuration config = new DefaultConfigurationImpl();
 	public Dao() {
-		this.dataSource = config.getDataSource();
 		ParameterizedType type = (ParameterizedType)this.getClass().getGenericSuperclass();
 		entityClass= (Class<?>) type.getActualTypeArguments()[0];
 	}
 
 	//增接口
 	protected void save(Object entity) {
+		log.debug(">------------ORM Begin--------------<");
+		log.debug("Method：Save  |  Object: "+entity);
 		String sql = buildSQL(entity, SQLType.Insert);
 		Number id = execute(sql);
-			try {
-				//通过反射将生成的主键注入回实体对象
-				PropertyDescriptor propertyDescriptor = new PropertyDescriptor(
-						"id", entity.getClass());
-				Object arg = Converter.convertNumberType(id, propertyDescriptor.getPropertyType());
-				propertyDescriptor.getWriteMethod().invoke(entity, arg);
-			} catch (Exception e) {
-				throw new RuntimeException("主键注入失败："+e.getMessage());
-			}
+		//通过反射将生成的主键注入回实体对象
+		try {
+			BeanHelper.setProperty(entity, "id", id);
+		} catch (IllegalAccessException | InvocationTargetException e) {
+			throw new RuntimeException("主键注入失败："+e.getMessage());
+		}
+		log.debug(">------------ORM End--------------<");
 	}
 	//删接口
 	protected void delete(Object entity) {
+		log.debug(">------------ORM Begin--------------<");
+		log.debug("Method：Delete  |  Object: "+entity);
 		String sql = buildSQL(entity, SQLType.Delete);
 		execute(sql);
+		log.debug(">------------ORM End--------------<");
 	}
 	//改接口
 	protected void update(Object entity) {
+		log.debug(">------------ORM Begin--------------<");
+		log.debug("Method：Update  |  Object: "+entity);
 		String sql = buildSQL(entity, SQLType.Update);
 		execute(sql);
+		log.debug(">------------ORM End--------------<");
 	}
 	//查接口
 	protected List<Object> query(String sql, Object... args) {
-		return executeQuery(sql,args);
+		log.debug(">------------ORM Begin--------------<");
+		log.debug("Method：Query");
+		List<Object> list = executeQuery(sql,args);
+		log.debug("ORM Result：" + list);
+		log.debug(">------------ORM End--------------<");
+		return list;
 	}
 
 	
@@ -88,15 +99,13 @@ public  abstract class Dao<T> {
 	 * @return
 	 */
 	private  List<Object> executeQuery(String sql, Object... args) {
-		System.out.println("---------------------------");
-		System.out.println("SQL："+sql);
 		Connection conn = null;
 		List<Object> list = null;
 		try {
 			conn = dataSource.getConnection();
 			PreparedStatement statement = getStatement(sql, conn, args);
 			ResultSet result = statement.executeQuery();
-			System.out.println("SQL execute finnish!");
+			log.debug("DB：SQL execute finnish!");
 			list =  parseResultSet(result);
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -120,15 +129,13 @@ public  abstract class Dao<T> {
 	 * @return 主键
 	 */
 	private Number execute(String sql, Object... args) {
-		System.out.println("---------------------------");
-		System.out.println("SQL："+sql);
 		Connection conn = null;
 		Number primaryKey = null;
 		try {
 			conn = dataSource.getConnection();
 			PreparedStatement statement = getStatement(sql, conn, args);
 			statement.executeUpdate();
-			System.out.println("SQL execute finnish!");
+			log.debug("SQL execute finnish!");
 			ResultSet result = statement.getGeneratedKeys();
 			if(result.next())
 				primaryKey = result.getLong(1);
@@ -155,7 +162,7 @@ public  abstract class Dao<T> {
 	 * @return
 	 */
 	private Map<String, Object> entityChangeToRowMap(Object entity) {
-		Map<String, Object> rowMap = new HashMap<>();
+		Map<String, Object> rowMap = new LinkedHashMap<>();
 		Class<?> entityClass = entity.getClass();
 		Field[] fields = entityClass.getDeclaredFields();
 		for (Field field : fields) {
@@ -164,7 +171,8 @@ public  abstract class Dao<T> {
 						field.getName(), entityClass);
 				Object value = propertyDescriptor.getReadMethod().invoke(
 						entity, new Object[] {});
-				rowMap.put(field.getName(), value);
+				if(value!=null)
+					rowMap.put(field.getName(), value);
 			} catch (IllegalAccessException | IllegalArgumentException| InvocationTargetException | IntrospectionException e) {
 				e.printStackTrace();
 			}
@@ -223,7 +231,7 @@ public  abstract class Dao<T> {
 			sql.append(" where id = " + id);
 			break;
 		case Delete:
-			sql.append("delete " + tableName + "where id = " + rowMap.get("id"));
+			sql.append("delete from " + tableName + " where id = " + rowMap.get("id"));
 			break;
 		default:
 			break;
@@ -242,21 +250,15 @@ public  abstract class Dao<T> {
 	private List<Object> parseResultSet(ResultSet result) {
 		List<Object> list = new ArrayList<>();
 		try {
-			Object obj = entityClass.newInstance();
+			Field[] fields = entityClass.getDeclaredFields();
 			while (result.next()) {
-				Field[] fields = entityClass.getDeclaredFields();
+				Object bean = entityClass.newInstance();
 				for (Field field : fields) {
-					String name = field.getName();
-					String value = result.getString(name);
-					PropertyDescriptor propertyDescriptor = new PropertyDescriptor(
-							name, entityClass);
-					propertyDescriptor.getWriteMethod()
-							.invoke(obj,
-									Converter.convertStringToObject(
-											propertyDescriptor
-													.getPropertyType(), value));
-					list.add(obj);
+						String name = field.getName();
+						Object value = result.getObject(name);
+						BeanHelper.setProperty(bean, name, value);
 				}
+				list.add(bean);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -265,6 +267,7 @@ public  abstract class Dao<T> {
 	}
 	private PreparedStatement getStatement(String sql, Connection conn,
 			Object... args) throws SQLException {
+		log.debug("SQL："+sql);
 		PreparedStatement statement = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
 		int i = 1;
 		for (Object object : args) {
