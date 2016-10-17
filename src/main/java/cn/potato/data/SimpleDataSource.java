@@ -1,5 +1,9 @@
 package cn.potato.data;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationHandler;
@@ -14,11 +18,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
-import javax.sql.DataSource;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * 简单数据源实现
  * @author 李恒名
@@ -29,7 +28,7 @@ public class SimpleDataSource implements DataSource {
 	
 	private List<Connection> pool = Collections.synchronizedList(new LinkedList<Connection>());
 	
-	private static String DEFALT_PROPERTIES_FILE_NAME = "application.properties";//默认的框架配置文件
+	private static String DEFAULT_PROPERTIES_FILE_NAME = "application.properties";//默认的框架配置文件
 	
 	private static int MIN_POOL_SIZE;//最小连接数
 	private static int MAX_POOL_SIZE;//最大连接数
@@ -42,8 +41,8 @@ public class SimpleDataSource implements DataSource {
 	static{
 		try {
 			Properties properties = new Properties();
-			properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream(DEFALT_PROPERTIES_FILE_NAME));
-			DRIVER_CLASS = properties.getProperty("jdbc.driver", "");
+			properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream(DEFAULT_PROPERTIES_FILE_NAME));
+			DRIVER_CLASS = properties.getProperty("jdbc.driver", "com.mysql.jdbc.Driver");
 			URL = properties.getProperty("jdbc.url", "");
 			USER = properties.getProperty("jdbc.user", "");
 			PASSWORD = properties.getProperty("jdbc.password", "");
