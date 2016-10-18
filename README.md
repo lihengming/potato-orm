@@ -47,7 +47,7 @@ public class User extends Model<User> {
 ```
 4.使用例子
 ```java
-@Test
+    @Test
     public void test() {
         User user = new User();
         user.setUsername("potato");
