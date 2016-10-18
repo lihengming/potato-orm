@@ -1,8 +1,8 @@
-- #简介
+## 简介
 Potato ORM 是用Java实现的一个简单的ORM框架，SQL方言目前(未来也)仅支持MySQL，仅供娱乐参考~
-- #如何使用？
-1. 引入Maven 依赖
-```
+## 如何使用？
+1.引入Maven 依赖
+```xml
 <!--Potato ORM-->
 <dependency>
     <groupId>com.github.lihengming</groupId>
@@ -23,7 +23,7 @@ Potato ORM 是用Java实现的一个简单的ORM框架，SQL方言目前(未来�
 </dependency>
 ```
 2.在classpath下添加配置文件application.properties
-```
+```xml
 # JDBC配置，请以你的实际参数进行更改
 jdbc.url=jdbc:mysql://localhost:3306/example?useUnicode=true&amp;characterEncoding=utf-8
 jdbc.user=root
@@ -33,8 +33,8 @@ jdbc.password=123456
 # pool.minsize=5
 # pool.maxsize=15
 ```
-3. 创建Model 并继承Model<T>
-```
+3.创建Model 并继承Model<T>
+```java
 public class User extends Model<User> {
     private Long id;
     private String username;
@@ -45,9 +45,9 @@ public class User extends Model<User> {
     //省略getter、setter
 }
 ```
-4. 使用例子
-```
-@Test
+4.使用例子
+```java
+    @Test
     public void test() {
         User user = new User();
         user.setUsername("potato");
@@ -72,5 +72,5 @@ public class User extends Model<User> {
     }
 ```
 
-- #使用建议
+## 使用建议
 本框架仅限于娱乐，因为它可能只是一个简简单单的玩具轮子，并且随时可能会爆胎，所以并不建议你使用它上路~。
