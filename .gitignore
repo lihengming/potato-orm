@@ -4,8 +4,9 @@
 *.mymetadata
 *.releaseBackup
 release.properties
+potato-orm.iml
 
-.idea/
+.idea/**
 target/
 .setting/
 .settings/
