@@ -45,7 +45,7 @@ public class User extends Model<User> {
     //省略getter、setter
 }
 ```
-4. 使用例子
+4.使用例子
 ```java
 @Test
     public void test() {
